@@ -1,0 +1,2 @@
+install required packages:  '''npm install'''
+run script: '''node index.mjs'''

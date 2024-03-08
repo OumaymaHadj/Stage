@@ -1,0 +1,20 @@
+{
+  "type": "module",
+  "name": "interface-generator",
+  "version": "1.0.0",
+  "description": "generates UI implementation from data model",
+  "main": "createProject.js",
+  "bin": {
+    "custom-command": "./src/help.js"
+  },
+  "scripts": {
+    "start": "node ./src/createProject.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "oumaima",
+  "license": "ISC",
+  "dependencies": {
+    "inquirer": "^9.2.15",
+    "mysql": "^2.18.1"
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "projectName": "oumayma",
+  "technology": "angular",
+  "database": "MySQL",
+  "database_info": {
+    "databaseHost": "localhost",
+    "databaseUsername": "phpmyadmin",
+    "databasePassword": "oumayma",
+    "databaseName": "db_sport"
+  }
+}
