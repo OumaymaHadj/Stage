@@ -5,6 +5,7 @@ import readline from 'readline';
 import { exec } from 'child_process';
 import inquirer from 'inquirer';
 import util from 'util';
+import { CLIENT_RENEG_LIMIT } from 'tls';
 
 let execPromise;
 
@@ -15,6 +16,12 @@ const greenText = '\x1b[32m%s\x1b[0m';
 const frameworksFilePath = path.join(process.cwd(), 'frameworks.json');
 let dbConfig;
 let tables;
+let object = {};
+let numeric = ['tinyint', 'smallint', 'mediumint', 'int', 'bigint', 'serial', 'decimal', 'float', 'double', 'real'];
+let bool = ['boolean', 'serial'];
+let date = ['date', 'datetime', 'timestamp', 'time', 'year'];
+let chaine = ['char', 'varchar', 'tinytext', 'text', 'mediumtext', 'longtext', 'binary', 'varbinary', 'tinyblob', 'blob', 'mediumblob', 'longblob'];
+
 
 export default function fetchData() {
     // Read the content of the frameworks.json file
@@ -101,6 +108,7 @@ export default function fetchData() {
                     }
 
                     afficherTableau(results);
+                    console.log(object);
                     rl.close();
 
                     const projectPath = path.join(process.cwd(), dbConfig.name);
@@ -111,67 +119,79 @@ export default function fetchData() {
                     const confirmQ =
                     {
                         type: 'confirm',
-                        name: 'confirmQuestionC',
-                        message: 'Do you want to create an angular component of this table?',
+                        name: 'confirmQuestion',
+                        message: 'Do you want to create an angular component, service and model of this table?',
                     }
 
                     inquirer.prompt(confirmQ)
                         .then((answers) => {
-                            if (answers.confirmQuestionC) {
+                            if (answers.confirmQuestion) {
                                 console.log(purpleText, `creating component ${selectedTableName} ...`);
                                 execPromise(`ng generate component ${selectedTableName}`);
 
                                 console.log(greenText, 'Component created successfully.');
-                            } else {
-                                // Exit the program
-                                console.log(purpleText, 'Exiting the program.');
-                                process.exit(0);
-                            }
-                        })
-                        .catch((error) => {
-                            console.error(redText, 'Error:', error);
-                        });
 
-                    const confirmService =
-                    {
-                        type: 'confirm',
-                        name: 'confirmQuestionS',
-                        message: `Do you want to create an angular service of ${selectedTableName} component ?`,
-                    }
+                                const directoryModelPath = path.join(process.cwd(), 'src', 'model');
 
-                    inquirer.prompt(confirmService)
-                        .then((answers) => {
-                            if (answers.confirmQuestionS) {
-
-                                const directoryPath = path.join(process.cwd(), 'src', 'app', 'service');
-
-                                // Vérifier si le dossier existe déjà
-                                if (!fs.existsSync(directoryPath)) {
+                                // Vérifier si le dossier model existe déjà
+                                if (!fs.existsSync(directoryModelPath)) {
                                     // Créer le dossier
-                                    fs.mkdirSync(directoryPath);
-                                    console.log('Le dossier "service" a été créé avec succès dans src/app.');
+                                    fs.mkdirSync(directoryModelPath);
+                                    console.log('Le dossier "model" a été créé avec succès dans src.');
                                 } else {
-                                    console.log('Le dossier "service" existe déjà dans src/app.');
+                                    console.log('Le dossier "model" existe déjà dans src.');
                                 }
 
-                                const directoryServicePath = path.join(process.cwd(), 'src', 'app', 'service', `${selectedTableName}`);
+                                process.chdir(directoryModelPath);
+
+                                console.log(purpleText, `creating model ${selectedTableName} ...`);
+
+                                // Générer le contenu du fichier
+                                const fileContent = generateTableModel(object, selectedTableName);
+
+                                // Écrire le contenu dans le fichier team.ts
+                                fs.writeFile(`${selectedTableName}.ts`, fileContent, (err) => {
+                                    if (err) {
+                                        console.error(redText,`Erreur lors de la création du fichier ${selectedTableName}.ts :`, err);
+                                    } else {
+                                        console.log(greenText, `Le fichier ${selectedTableName}.ts a été créé avec succès.`);
+                                    }
+                                });
+
+                                const directoryPath = path.resolve(process.cwd(), '..');
+                                process.chdir(directoryPath);
+                                console.log(process.cwd());
+                                const servicePath = path.join(process.cwd(), 'service');
+                                // Vérifier si le dossier existe déjà
+                                if (!fs.existsSync(servicePath)) {
+                                    // Créer le dossier
+                                    fs.mkdirSync(servicePath);
+                                    console.log('Le dossier "service" a été créé avec succès dans src.');
+                                } else {
+                                    console.log('Le dossier "service" existe déjà dans src.');
+                                }
+                                process.chdir(servicePath);
+
+                                const directoryServicePath = path.join(process.cwd(), `${selectedTableName}`);
 
                                 // Vérifier si le dossier existe déjà
                                 if (!fs.existsSync(directoryServicePath)) {
                                     // Créer le dossier
                                     fs.mkdirSync(directoryServicePath);
-                                    console.log(`Le dossier "${selectedTableName}" a été créé avec succès dans src/app.`);
+                                    console.log(`Le dossier "${selectedTableName}" a été créé avec succès dans src.`);
                                 } else {
-                                    console.log(`Le dossier "${selectedTableName}" existe déjà dans src/app.`);
+                                    console.log(`Le dossier "${selectedTableName}" existe déjà dans src.`);
                                 }
 
-                                
+
                                 process.chdir(directoryServicePath);
 
                                 console.log(purpleText, `creating service ${selectedTableName} ...`);
                                 execPromise(`ng generate service ${selectedTableName}`);
 
                                 console.log(greenText, 'Service created successfully.');
+                                console.log(process.cwd())
+
                             } else {
                                 // Exit the program
                                 console.log(purpleText, 'Exiting the program.');
@@ -181,13 +201,25 @@ export default function fetchData() {
                         .catch((error) => {
                             console.error(redText, 'Error:', error);
                         });
-
-                    
-
                 });
+                
             });
         });
     });
+}
+
+// Générer le contenu du fichier team.ts
+function generateTableModel(tableObject, tableName) {
+    let content = `export class ${tableName} {\n\n`;
+
+    // Générer les propriétés de la classe à partir de l'objet
+    for (const property in tableObject) {
+        content += `    ${property}!: ${tableObject[property]};\n`;
+    }
+
+    content += `}\n`;
+
+    return content;
 }
 
 function afficherTableau(tableau) {
@@ -207,7 +239,13 @@ function afficherTableau(tableau) {
 
     // Afficher les données
     tableau.forEach(row => {
+        const typeWithoutParams = row.Type.split('(')[0].toLowerCase(); 
         console.log('║' + row.Field.toString().padEnd(largeurColonne1) + '║' + row.Type.toString().padEnd(largeurColonne2) + '║');
+        if (numeric.includes(typeWithoutParams)) object[row.Field.toString()] = 'number';
+        else if (bool.includes(typeWithoutParams)) object[row.Field.toString()] = 'boolean';
+        else if (date.includes(typeWithoutParams)) object[row.Field.toString()] = 'Date';
+        else if (chaine.includes(typeWithoutParams)) object[row.Field.toString()] = 'string';
+        else object[row.Field.toString()] = 'unknown'; 
     });
 
     // Dessiner la bordure inférieure
