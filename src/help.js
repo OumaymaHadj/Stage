@@ -1,26 +1,26 @@
-
+import initializeProject from './createProject.js';
 
 const showCommands = () => {
     console.log(`
   List of Commands:
   
-  1. 'showTables':
-     Show a list of tables.
+  1. 'createProject':
+     Create a specific project.
   
      Example:
-     custom-command showTables
+     createProject 
   
-  2. 'selectTable':
-     Choose a specific table.
-  
-     Example:
-     custom-command selectTable users
-  
-  3. 'extractFieldsType':
-     Extract fields and their types from the selected table.
+  2. 'cofigureDB':
+     Configuration of your database.
   
      Example:
-     custom-command extractFieldsType
+     configureDB  nameOfProject
+  
+  3. 'connectDB':
+     Access to your database.
+  
+     Example:
+     connectDB nameOfProject
     `);
 };
 
@@ -29,23 +29,18 @@ const command = process.argv[2];
 
 // Perform actions based on the command
 switch (command) {
-    case 'showTables':
-        console.log("Showing list of tables...");
+    case 'createProject':
+        console.log("Create a specific project...");
+        initializeProject();
+        break;
+
+    case 'cofigureDB':
+        console.log("Configuration of your database...");
         // Implement logic to show tables here
         break;
 
-    case 'selectTable':
-        const tableName = process.argv[3];
-        if (tableName) {
-            console.log(`Choosing table: ${tableName}`);
-            // Implement logic to select a table here
-        } else {
-            console.log("Error: Please provide a table name with 'selectTable' command.");
-        }
-        break;
-
-    case 'extractFieldsType':
-        console.log("Extracting fields and types from the selected table...");
+    case 'connectDB':
+        console.log("Access to your database...");
         // Implement logic to extract fields and types here
         break;
 
